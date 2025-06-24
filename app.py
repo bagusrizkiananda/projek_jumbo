@@ -1,10 +1,9 @@
 import streamlit as st
 import pandas as pd
 
-# Judul Aplikasi
 st.title("Aplikasi Filter Komentar Berdasarkan Sentimen")
 
-# Memuat dataset
+# Load dataset
 @st.cache_data
 def load_data():
     df = pd.read_csv("processed_jumbo.csv")
@@ -12,23 +11,30 @@ def load_data():
 
 data = load_data()
 
-# Tampilkan 5 data pertama untuk konfirmasi
-st.subheader("Data Komentar (preview):")
-st.write(data.head())
-
-# Pastikan kolom sentimen dan komentar tersedia
-if 'sentimen' not in data.columns or 'komentar' not in data.columns:
-    st.error("Dataset harus memiliki kolom 'komentar' dan 'sentimen'")
+# Cek keberadaan kolom label
+if 'label' not in data.columns:
+    st.error("Dataset harus memiliki kolom 'label'")
 else:
-    # Pilihan filter sentimen
-    pilihan = st.radio("Pilih kategori sentimen untuk difilter:", ["Semua", "Positif", "Netral", "Negatif"])
-
-    # Filter berdasarkan pilihan
-    if pilihan == "Semua":
-        hasil = data
+    # Deteksi kolom komentar secara otomatis (selain 'label')
+    komentar_cols = [col for col in data.columns if col.lower() != 'label']
+    
+    if not komentar_cols:
+        st.error("Tidak ditemukan kolom komentar (selain 'label')")
     else:
-        hasil = data[data['sentimen'].str.lower() == pilihan.lower()]
+        komentar_col = komentar_cols[0]  # Ambil kolom komentar pertama
 
-    # Tampilkan hasil
-    st.subheader(f"Hasil Filter: {pilihan}")
-    st.write(hasil[['komentar', 'sentimen']])
+        # Tampilkan preview
+        st.subheader("Data Komentar (preview):")
+        st.write(data[[komentar_col, 'label']].head())
+
+        # Pilihan filter
+        pilihan = st.radio("Pilih kategori sentimen:", ["Semua", "Positif", "Netral", "Negatif"])
+
+        if pilihan == "Semua":
+            hasil = data
+        else:
+            hasil = data[data['label'].str.lower() == pilihan.lower()]
+
+        # Tampilkan hasil
+        st.subheader(f"Hasil Filter: {pilihan}")
+        st.write(hasil[[komentar_col, 'label']])
